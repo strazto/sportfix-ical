@@ -2,6 +2,7 @@
 
 import express from "express";
 import ical, { ICalEventData, ICalEvent } from "ical-generator";
+import { DateTime } from "luxon";
 
 import { TeamDetailResponseSchema } from "./schemas/TeamDetailResponse";
 
@@ -46,10 +47,10 @@ app.get("/calendar/:centreID/:teamId", async (req, res) => {
 
   const details = detailsResult.data.MobTeamDetails;
 
-  type Competetition = (typeof details.AssociatedCompetitionCollection)[number];
-  const defaultCompetition: Competetition = {
-    divisionId: 0,
-    divisonName: "Unknown",
+  type Competition = (typeof details.AssociatedCompetitionCollection)[number];
+  const defaultCompetition: Competition = {
+    DivisionId: 0,
+    DivisionName: "Unknown",
     LinkTo: false,
     SeasonId: 0,
     SeasonName: "Unknown",
@@ -61,10 +62,23 @@ app.get("/calendar/:centreID/:teamId", async (req, res) => {
 
   const name = `${details.Name} | ${comp.SeasonName} - ${comp.DivisionName}`;
 
+  const source = new URL(
+    req.url,
+    `${req.protocol}://${req.headers.host}`
+  ).toString();
+
   const cal = ical({
     name,
-    source: req.hostname,
+    source,
   });
 
-  //details.data.MobTeamDetails.UpcomingMatchCollection.m
+  const upcomingEvents = details.UpcomingMatchCollection.map(
+    (match): ICalEventData => {
+      //const start = DateTime.fromFormat(match.MatchDate);
+      const out: ICalEventData = {
+        start: match.MatchTime,
+      };
+      return out;
+    }
+  );
 });
