@@ -72,13 +72,37 @@ app.get("/calendar/:centreID/:teamId", async (req, res) => {
     source,
   });
 
-  const upcomingEvents = details.UpcomingMatchCollection.map(
-    (match): ICalEventData => {
-      //const start = DateTime.fromFormat(match.MatchDate);
-      const out: ICalEventData = {
-        start: match.MatchTime,
-      };
-      return out;
-    }
-  );
+  type MatchDetails = (typeof details.UpcomingMatchCollection)[number];
+
+  const constructEvent = (match: MatchDetails): ICalEventData => {
+    // MatchDate: Mon, Jun 05
+    // MatchTime: 09:05 PM
+    // YearFormed: "2023"
+    const formattedDttm = `${details.YearFormed} ${match.MatchDate} ${match.MatchTime}`;
+    const start = DateTime.fromFormat(formattedDttm, "yyyy EEE, MMM dd t");
+    const end = start.plus({ hours: 1 });
+
+    const sportName = details.SportCollectionMetaData[0]?.Value ?? "";
+
+    const otherTeamName =
+      match.AwayTeam.Id !== details.Id ? match.AwayTeam.Name : details.Name;
+
+    const out: ICalEventData = {
+      start,
+      end,
+      summary: `${details.Name} vs ${otherTeamName} `,
+      description: `
+        ${match.CourtName}
+      `,
+    };
+    return out;
+  };
+
+  const upcomingEvents = details.UpcomingMatchCollection.map(constructEvent);
+  const pastEvents = details.CompletedMatchCollection.map(constructEvent);
+
+  upcomingEvents.forEach((e) => cal.createEvent(e));
+  pastEvents.forEach((e) => cal.createEvent(e));
+
+  cal.serve(res);
 });
