@@ -28,8 +28,6 @@ const teamDetails = async (params: { centreID: string; teamId: string }) => {
     return undefined;
   }
 
-  console.log(res);
-
   return res;
 };
 
@@ -75,21 +73,48 @@ app.get("/calendar/:centreID/:teamId", async (req, res) => {
   type MatchDetails = (typeof details.UpcomingMatchCollection)[number];
 
   const constructEvent = (match: MatchDetails): ICalEventData => {
-    // MatchDate: Mon, Jun 05
-    // MatchTime: 09:05 PM
-    // YearFormed: "2023"
-    const formattedDttm = `${details.YearFormed} ${match.MatchDate} ${match.MatchTime}`;
-    const start = DateTime.fromFormat(formattedDttm, "yyyy EEE, MMM dd t");
-    const end = start.plus({ hours: 1 });
+    const getTimeDetails = ({
+      MatchDate,
+      MatchTime,
+      YearFormed,
+    }: {
+      MatchDate: string;
+      MatchTime: string;
+      YearFormed: string;
+    }) => {
+      if (MatchTime === "NA") {
+        const formattedDttm = `${details.YearFormed} ${match.MatchDate}`;
+        const start = DateTime.fromFormat(formattedDttm, "yyyy EEE, MMM dd");
+
+        return { allDay: true, start };
+      }
+
+      // MatchDate: Mon, Jun 05
+      // MatchTime: 09:05 PM
+      // YearFormed: "2023"
+      const formattedDttm = `${details.YearFormed} ${match.MatchDate} ${match.MatchTime}`;
+      const start = DateTime.fromFormat(formattedDttm, "yyyy EEE, MMM dd t");
+      const end = start.plus({ hours: 1 });
+
+      if (!start || !end) {
+        console.warn({ start, end });
+      }
+
+      return {
+        start,
+        end,
+      };
+    };
+
+    const timeDetails = getTimeDetails({ ...details, ...match });
 
     const sportName = details.SportCollectionMetaData[0]?.Value ?? "";
 
     const otherTeamName =
-      match.AwayTeam.Id !== details.Id ? match.AwayTeam.Name : details.Name;
+      match.AwayTeam.Id === details.Id ? match.HomeTeam.Name : details.Name;
 
     const out: ICalEventData = {
-      start,
-      end,
+      ...timeDetails,
       summary: `${details.Name} vs ${otherTeamName} `,
       description: `
         ${match.CourtName}
@@ -106,3 +131,5 @@ app.get("/calendar/:centreID/:teamId", async (req, res) => {
 
   cal.serve(res);
 });
+
+app.listen(3000);
