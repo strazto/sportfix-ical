@@ -12,11 +12,14 @@ import {
   MetadataInput,
   metadataInputSchema,
 } from "./schemas/MetadataInputSchema";
+import memoizee from "memoizee";
 
 const apiHost = "https://api.fixionline.com";
 const routerPath = "MobService.svc";
 const teamDetailEndpoint = "GetMobTeamDetails";
 const dttmFormatString = "yyyy EEE, MMM dd t";
+
+const memoizeeExpiryConf = { maxAge: 1000 * 60 * 60 * 24, preFetch: 0.8 };
 
 const teamDetails = async (params: { centreID: string; teamId: string }) => {
   const endpoint = `${apiHost}/${routerPath}/${teamDetailEndpoint}`;
@@ -39,6 +42,11 @@ const teamDetails = async (params: { centreID: string; teamId: string }) => {
   return res;
 };
 
+const teamDetailsMemo = memoizee(teamDetails, {
+  async: true,
+  ...memoizeeExpiryConf,
+});
+
 const app = express();
 
 const parseMetadata = async (mdRaw?: string): Promise<MetadataInput> => {
@@ -52,17 +60,21 @@ const parseMetadata = async (mdRaw?: string): Promise<MetadataInput> => {
   return parsed.data;
 };
 
+const parseMetadataMemo = memoizee(parseMetadata, {
+  async: true,
+});
+
 app.get("/calendar/:centreID/:teamId/:metadata?", async (req, res) => {
   const { centreID, teamId, metadata: metadataRaw } = req.params;
   //teamDetails({ centreID: "1720", teamId: "263619" });
-  const detailsResult = await teamDetails({ centreID, teamId });
+  const detailsResult = await teamDetailsMemo({ centreID, teamId });
 
   if (!detailsResult) {
     res.status(500).send("Error");
     return;
   }
 
-  const metadata = await parseMetadata(metadataRaw);
+  const metadata = await parseMetadataMemo(metadataRaw);
 
   const details = detailsResult.data.MobTeamDetails;
 
