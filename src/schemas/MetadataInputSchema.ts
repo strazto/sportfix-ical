@@ -1,7 +1,7 @@
 import * as z from "zod";
 import { iCalLocationSchema, iCalWeekdaySchema } from "./IcalGeneratorSchemas";
 
-const dttmSchema = z.string().datetime();
+const dttmSchema = z.coerce.date(); //.string().datetime();
 const matchTimeSchema = z.object({
   hour: z.number(),
   minute: z.number(),
@@ -9,8 +9,8 @@ const matchTimeSchema = z.object({
 
 export const metadataInputSchema = z.object({
   location: iCalLocationSchema.optional(),
-  competitionStart: dttmSchema,
-  nRounds: z.number(),
+  competitionStart: dttmSchema.optional(),
+  nRounds: z.number().optional(),
   breaks: z
     .array(
       z.object({
@@ -19,12 +19,14 @@ export const metadataInputSchema = z.object({
       })
     )
     .optional(),
-  timezone: z.string().optional().default("Australia/Sydney"),
-  fixtureTimes: z.object({
-    weekday: iCalWeekdaySchema,
-    startTime: matchTimeSchema,
-    endTime: matchTimeSchema,
-  }),
+  timezone: z.string().optional(),
+  fixtureTimes: z
+    .object({
+      weekday: iCalWeekdaySchema,
+      startTime: matchTimeSchema,
+      endTime: matchTimeSchema,
+    })
+    .optional(),
 });
 
 export type MetadataInput = z.infer<typeof metadataInputSchema>;

@@ -1,11 +1,17 @@
 "use strict";
 
 import express from "express";
-import ical, { ICalEventData, ICalEvent } from "ical-generator";
+import ical, { ICalEventData } from "ical-generator";
 import { DateTime } from "luxon";
 
 import { TeamDetailResponseSchema } from "./schemas/TeamDetailResponse";
 import dedent from "dedent";
+import jsonUrl from "json-url";
+
+import {
+  MetadataInput,
+  metadataInputSchema,
+} from "./schemas/MetadataInputSchema";
 
 const apiHost = "https://api.fixionline.com";
 const routerPath = "MobService.svc";
@@ -35,8 +41,19 @@ const teamDetails = async (params: { centreID: string; teamId: string }) => {
 
 const app = express();
 
-app.get("/calendar/:centreID/:teamId", async (req, res) => {
-  const { centreID, teamId } = req.params;
+const parseMetadata = async (mdRaw?: string): Promise<MetadataInput> => {
+  if (!mdRaw) return {};
+  const parsed = await jsonUrl("lzw")
+    .decompress(mdRaw)
+    .then((rawJson: unknown) => metadataInputSchema.safeParse(rawJson));
+
+  if (!parsed.success) return {};
+
+  return parsed.data;
+};
+
+app.get("/calendar/:centreID/:teamId/:metadata?", async (req, res) => {
+  const { centreID, teamId, metadata: metadataRaw } = req.params;
   //teamDetails({ centreID: "1720", teamId: "263619" });
   const detailsResult = await teamDetails({ centreID, teamId });
 
@@ -44,6 +61,8 @@ app.get("/calendar/:centreID/:teamId", async (req, res) => {
     res.status(500).send("Error");
     return;
   }
+
+  const metadata = await parseMetadata(metadataRaw);
 
   const details = detailsResult.data.MobTeamDetails;
 
@@ -70,6 +89,7 @@ app.get("/calendar/:centreID/:teamId", async (req, res) => {
   const cal = ical({
     name,
     source,
+    timezone: metadata.timezone ?? "Australia/Sydney",
   });
 
   type MatchDetails = (typeof details.UpcomingMatchCollection)[number];
@@ -121,6 +141,7 @@ app.get("/calendar/:centreID/:teamId", async (req, res) => {
       description: dedent`
         ${match.CourtName}
       `,
+      location: metadata.location,
     };
     return out;
   };

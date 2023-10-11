@@ -6,7 +6,7 @@ import {
 } from "./../vendor/IcalGeneratorTypes";
 
 // Modified to actually expect dttm
-export const iCalDateTimeValueSchema = z.string().datetime();
+export const iCalDateTimeValueSchema = z.coerce.date(); //.string().datetime();
 
 export const iCalEventRepeatingFreqSchema = z.nativeEnum(
   ICalEventRepeatingFreq
