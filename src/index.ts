@@ -5,6 +5,7 @@ import ical, { ICalEventData, ICalEvent } from "ical-generator";
 import { DateTime } from "luxon";
 
 import { TeamDetailResponseSchema } from "./schemas/TeamDetailResponse";
+import dedent from "dedent";
 
 const apiHost = "https://api.fixionline.com";
 const routerPath = "MobService.svc";
@@ -116,7 +117,7 @@ app.get("/calendar/:centreID/:teamId", async (req, res) => {
     const out: ICalEventData = {
       ...timeDetails,
       summary: `${details.Name} vs ${otherTeamName} `,
-      description: `
+      description: dedent`
         ${match.CourtName}
       `,
     };
