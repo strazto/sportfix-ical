@@ -10,6 +10,7 @@ import dedent from "dedent";
 const apiHost = "https://api.fixionline.com";
 const routerPath = "MobService.svc";
 const teamDetailEndpoint = "GetMobTeamDetails";
+const dttmFormatString = "yyyy EEE, MMM dd t";
 
 const teamDetails = async (params: { centreID: string; teamId: string }) => {
   const endpoint = `${apiHost}/${routerPath}/${teamDetailEndpoint}`;
@@ -84,11 +85,8 @@ app.get("/calendar/:centreID/:teamId", async (req, res) => {
       YearFormed: string;
     }) => {
       if (MatchTime === "NA") {
-        const formattedDttm = `${details.YearFormed} ${match.MatchDate}`;
-        const start = DateTime.fromFormat(
-          formattedDttm,
-          "yyyy EEE, MMM dd"
-        ).plus({ hours: 1 });
+        const formattedDttm = `${YearFormed} ${MatchDate} 01:00 AM`;
+        const start = DateTime.fromFormat(formattedDttm, dttmFormatString);
 
         return { allDay: true, start };
       }
@@ -96,8 +94,8 @@ app.get("/calendar/:centreID/:teamId", async (req, res) => {
       // MatchDate: Mon, Jun 05
       // MatchTime: 09:05 PM
       // YearFormed: "2023"
-      const formattedDttm = `${details.YearFormed} ${match.MatchDate} ${match.MatchTime}`;
-      const start = DateTime.fromFormat(formattedDttm, "yyyy EEE, MMM dd t");
+      const formattedDttm = `${YearFormed} ${MatchDate} ${MatchTime}`;
+      const start = DateTime.fromFormat(formattedDttm, dttmFormatString);
       const end = start.plus({ hours: 1 });
 
       if (!start || !end) {
