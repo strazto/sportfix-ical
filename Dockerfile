@@ -9,4 +9,4 @@ COPY src/ /app/src/
 
 EXPOSE 3000
 
-CMD npx ts-node src/index.ts
+CMD npm run start
