@@ -85,7 +85,10 @@ app.get("/calendar/:centreID/:teamId", async (req, res) => {
     }) => {
       if (MatchTime === "NA") {
         const formattedDttm = `${details.YearFormed} ${match.MatchDate}`;
-        const start = DateTime.fromFormat(formattedDttm, "yyyy EEE, MMM dd");
+        const start = DateTime.fromFormat(
+          formattedDttm,
+          "yyyy EEE, MMM dd"
+        ).plus({ hours: 1 });
 
         return { allDay: true, start };
       }
