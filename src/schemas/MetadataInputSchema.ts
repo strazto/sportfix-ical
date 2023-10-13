@@ -1,5 +1,6 @@
 import * as z from "zod";
 import { iCalLocationSchema, iCalWeekdaySchema } from "./IcalGeneratorSchemas";
+import { DateTime } from "luxon";
 
 const dttmSchema = z.coerce.date(); //.string().datetime();
 const matchTimeSchema = z.object({
@@ -7,18 +8,37 @@ const matchTimeSchema = z.object({
   minute: z.number(),
 });
 
+export type MatchTime = z.infer<typeof matchTimeSchema>;
+
+const checkSaneIntervals = (
+  startTime: MatchTime,
+  endTime: MatchTime
+): boolean => {
+  try {
+    const start = DateTime.fromObject(startTime);
+    const end = DateTime.fromObject(endTime);
+
+    if (start > end) {
+      console.warn({ msg: "Start > end", start, end });
+      return false;
+    }
+  } catch (e) {
+    console.warn({ error: e, startTime, endTime });
+    return false;
+  }
+  return true;
+};
+
 export const metadataInputSchema = z.object({
   location: iCalLocationSchema.optional(),
-  competitionStart: dttmSchema.optional(),
-  nRounds: z.number().optional(),
-  breaks: z
-    .array(
-      z.object({
+  seasonTimes: z.array(
+    z
+      .object({
         start: dttmSchema,
         end: dttmSchema,
       })
-    )
-    .optional(),
+      .refine(({ start, end }) => start <= end)
+  ),
   timezone: z.string().optional(),
   fixtureTimes: z
     .object({
@@ -26,6 +46,7 @@ export const metadataInputSchema = z.object({
       startTime: matchTimeSchema,
       endTime: matchTimeSchema,
     })
+    .refine(({ startTime, endTime }) => checkSaneIntervals(startTime, endTime))
     .optional(),
 });
 

@@ -2,7 +2,7 @@
 
 import express from "express";
 import ical, { ICalEventData } from "ical-generator";
-import { DateTime } from "luxon";
+import { DateTime, Interval } from "luxon";
 
 import { TeamDetailResponseSchema } from "./schemas/TeamDetailResponse";
 import dedent from "dedent";
@@ -93,6 +93,8 @@ app.get("/calendar/:centreID/:teamId/:metadata?", async (req, res) => {
 
   const name = `${details.Name} | ${comp.SeasonName} - ${comp.DivisionName}`;
 
+  const sportName = details.SportCollectionMetaData[0]?.Value ?? "";
+
   const source = new URL(
     req.url,
     `${req.protocol}://${req.headers.host}`
@@ -106,6 +108,7 @@ app.get("/calendar/:centreID/:teamId/:metadata?", async (req, res) => {
 
   type MatchDetails = (typeof details.UpcomingMatchCollection)[number];
 
+  // TODO - Determine the year using the season boundary as intervals
   const constructEvent = (match: MatchDetails): ICalEventData => {
     const getTimeDetails = ({
       MatchDate,
@@ -142,8 +145,6 @@ app.get("/calendar/:centreID/:teamId/:metadata?", async (req, res) => {
 
     const timeDetails = getTimeDetails({ ...details, ...match });
 
-    const sportName = details.SportCollectionMetaData[0]?.Value ?? "";
-
     const otherTeamName =
       match.AwayTeam.Id === details.Id ? match.HomeTeam.Name : details.Name;
 
@@ -161,8 +162,76 @@ app.get("/calendar/:centreID/:teamId/:metadata?", async (req, res) => {
   const upcomingEvents = details.UpcomingMatchCollection.map(constructEvent);
   const pastEvents = details.CompletedMatchCollection.map(constructEvent);
 
-  upcomingEvents.forEach((e) => cal.createEvent(e));
-  pastEvents.forEach((e) => cal.createEvent(e));
+  const knownDates = new Set<string | null>();
+
+  const addEvent = (e: ICalEventData) => {
+    cal.createEvent(e);
+    const { start } = e;
+
+    if (!start) return;
+
+    if (typeof start === "string") {
+      const dttm = DateTime.fromISO(start);
+      knownDates.add(dttm.toISODate());
+      return;
+    }
+
+    if (start instanceof DateTime) {
+      knownDates.add(start.toISODate());
+      return;
+    }
+
+    if (start instanceof Date) {
+      const dttm = DateTime.fromJSDate(start);
+      knownDates.add(dttm.toISODate());
+      return;
+    }
+  };
+
+  upcomingEvents.forEach(addEvent);
+  pastEvents.forEach(addEvent);
+
+  const unknownFixtures = metadata.seasonTimes?.flatMap((seasonTime) => {
+    const start = DateTime.fromJSDate(seasonTime.start);
+    const end = DateTime.fromJSDate(seasonTime.end);
+
+    const interval = Interval.fromDateTimes(start, end);
+
+    const out: ICalEventData[] = [];
+
+    for (let i = start; interval.contains(i); i = i.plus({ weeks: 1 })) {
+      // Skip if its already got a fixture
+      if (knownDates.has(i.toISODate())) continue;
+      // Skip if it was in the past
+      if (i < DateTime.now()) continue;
+
+      const start = i
+        .startOf("day")
+        .plus(metadata.fixtureTimes?.startTime ?? 0);
+      const end = i.startOf("day").plus(metadata.fixtureTimes?.endTime ?? 0);
+
+      const event: ICalEventData = {
+        start,
+        end,
+        summary: `${details.Name} | ${sportName} - Slot`,
+        description: "Fixture not yet posted",
+        location: metadata.location,
+      };
+
+      out.push(event);
+    }
+    return out;
+  });
+
+  unknownFixtures.forEach((e) => cal.createEvent(e));
+
+  // if (metadata.competitionStart) {
+  //   cal.createEvent({
+  //     start: metadata.competitionStart,
+  //     allDay: true,
+  //     summary: "Season begins",
+  //   });
+  // }
 
   cal.serve(res);
 });
