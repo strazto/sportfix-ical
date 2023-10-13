@@ -49,13 +49,15 @@ const teamDetailsMemo = memoizee(teamDetails, {
 
 const app = express();
 
-const parseMetadata = async (mdRaw?: string): Promise<MetadataInput> => {
-  if (!mdRaw) return {};
+const parseMetadata = async (
+  mdRaw?: string
+): Promise<MetadataInput | undefined> => {
+  if (!mdRaw) return;
   const parsed = await jsonUrl("lzma")
     .decompress(mdRaw)
     .then((rawJson: unknown) => metadataInputSchema.safeParse(rawJson));
 
-  if (!parsed.success) return {};
+  if (!parsed.success) return;
 
   return parsed.data;
 };
@@ -103,7 +105,7 @@ app.get("/calendar/:centreID/:teamId/:metadata?", async (req, res) => {
   const cal = ical({
     name,
     source,
-    timezone: metadata.timezone ?? "Australia/Sydney",
+    timezone: metadata?.timezone ?? "Australia/Sydney",
   });
 
   type MatchDetails = (typeof details.UpcomingMatchCollection)[number];
@@ -154,7 +156,7 @@ app.get("/calendar/:centreID/:teamId/:metadata?", async (req, res) => {
       description: dedent`
         ${match.CourtName}
       `,
-      location: metadata.location,
+      location: metadata?.location,
     };
     return out;
   };
@@ -191,37 +193,38 @@ app.get("/calendar/:centreID/:teamId/:metadata?", async (req, res) => {
   upcomingEvents.forEach(addEvent);
   pastEvents.forEach(addEvent);
 
-  const unknownFixtures = metadata.seasonTimes?.flatMap((seasonTime) => {
-    const start = DateTime.fromJSDate(seasonTime.start);
-    const end = DateTime.fromJSDate(seasonTime.end);
+  const unknownFixtures =
+    metadata?.seasonTimes.flatMap((seasonTime) => {
+      const start = DateTime.fromJSDate(seasonTime.start);
+      const end = DateTime.fromJSDate(seasonTime.end);
 
-    const interval = Interval.fromDateTimes(start, end);
+      const interval = Interval.fromDateTimes(start, end);
 
-    const out: ICalEventData[] = [];
+      const out: ICalEventData[] = [];
 
-    for (let i = start; interval.contains(i); i = i.plus({ weeks: 1 })) {
-      // Skip if its already got a fixture
-      if (knownDates.has(i.toISODate())) continue;
-      // Skip if it was in the past
-      if (i < DateTime.now()) continue;
+      for (let i = start; interval.contains(i); i = i.plus({ weeks: 1 })) {
+        // Skip if its already got a fixture
+        if (knownDates.has(i.toISODate())) continue;
+        // Skip if it was in the past
+        if (i < DateTime.now()) continue;
 
-      const start = i
-        .startOf("day")
-        .plus(metadata.fixtureTimes?.startTime ?? 0);
-      const end = i.startOf("day").plus(metadata.fixtureTimes?.endTime ?? 0);
+        const start = i
+          .startOf("day")
+          .plus(metadata.fixtureTimes?.startTime ?? 0);
+        const end = i.startOf("day").plus(metadata.fixtureTimes?.endTime ?? 0);
 
-      const event: ICalEventData = {
-        start,
-        end,
-        summary: `${details.Name} | ${sportName} - Slot`,
-        description: "Fixture not yet posted",
-        location: metadata.location,
-      };
+        const event: ICalEventData = {
+          start,
+          end,
+          summary: `${details.Name} | ${sportName} - Slot`,
+          description: "Fixture not yet posted",
+          location: metadata.location,
+        };
 
-      out.push(event);
-    }
-    return out;
-  });
+        out.push(event);
+      }
+      return out;
+    }) ?? [];
 
   unknownFixtures.forEach((e) => cal.createEvent(e));
 
