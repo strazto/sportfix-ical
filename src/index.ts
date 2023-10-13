@@ -51,7 +51,7 @@ const app = express();
 
 const parseMetadata = async (mdRaw?: string): Promise<MetadataInput> => {
   if (!mdRaw) return {};
-  const parsed = await jsonUrl("lzw")
+  const parsed = await jsonUrl("lzma")
     .decompress(mdRaw)
     .then((rawJson: unknown) => metadataInputSchema.safeParse(rawJson));
 
