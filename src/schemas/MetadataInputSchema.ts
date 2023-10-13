@@ -5,7 +5,7 @@ import { DateTime } from "luxon";
 const dttmSchema = z.coerce.date(); //.string().datetime();
 const matchTimeSchema = z.object({
   hour: z.number(),
-  minute: z.number(),
+  minute: z.number().optional(),
 });
 
 export type MatchTime = z.infer<typeof matchTimeSchema>;
