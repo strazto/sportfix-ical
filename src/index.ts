@@ -216,7 +216,7 @@ app.get("/calendar/:centreID/:teamId/:metadata?", async (req, res) => {
         const event: ICalEventData = {
           start,
           end,
-          summary: `${details.Name} | ${sportName} - Slot`,
+          summary: `${details.Name} | ${sportName} - Placeholder`,
           description: "Fixture not yet posted",
           location: metadata.location,
         };
