@@ -151,6 +151,15 @@ app.get("/calendar/:centreID/:teamId/:metadata?", async (req, res) => {
         console.warn({ start, end });
       }
 
+      if (start.invalidExplanation) {
+        console.warn({
+          msg: start.invalidExplanation,
+          formattedDttm,
+          MatchDate,
+          MatchTime,
+        });
+      }
+
       return {
         start,
         end,
@@ -186,10 +195,19 @@ app.get("/calendar/:centreID/:teamId/:metadata?", async (req, res) => {
   const knownDates = new Set<string | null>();
 
   const addEvent = (e: ICalEventData) => {
-    cal.createEvent(e);
     const { start } = e;
 
-    if (!start) return;
+    if (!start) {
+      console.error({ msg: "Event missing start", event: e });
+      return;
+    }
+
+    try {
+      cal.createEvent(e);
+    } catch (err) {
+      console.error({ err, start, end: e.end, event: e });
+      return;
+    }
 
     if (typeof start === "string") {
       const dttm = DateTime.fromISO(start);
