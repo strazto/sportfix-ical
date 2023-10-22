@@ -19,7 +19,7 @@ import memoizee from "memoizee";
 const apiHost = "https://api.fixionline.com";
 const routerPath = "MobService.svc";
 const teamDetailEndpoint = "GetMobTeamDetails";
-const dttmFormatString = "yyyy EEE, MMM dd t";
+const dttmFormatString = "yyyy MMM dd t";
 
 const memoizeeExpiryConf = { maxAge: 1000 * 60 * 60 * 24, preFetch: 0.8 };
 
@@ -133,17 +133,21 @@ app.get("/calendar/:centreID/:teamId/:metadata?", async (req, res) => {
       MatchTime: string;
       YearFormed: string;
     }) => {
+      // MatchDate: Mon, Jun 05
+      // MatchTime: 09:05 PM
+      // YearFormed: "2023"
+      const strippedDate = MatchDate.replace(
+        /(Mon|Tue|Wed|Thu|Fri|Sat|Sun),\s*/,
+        ""
+      );
       if (MatchTime === "NA") {
-        const formattedDttm = `${YearFormed} ${MatchDate} 01:00 AM`;
+        const formattedDttm = `${YearFormed} ${strippedDate} 01:00 AM`;
         const start = DateTime.fromFormat(formattedDttm, dttmFormatString);
 
         return { allDay: true, start };
       }
 
-      // MatchDate: Mon, Jun 05
-      // MatchTime: 09:05 PM
-      // YearFormed: "2023"
-      const formattedDttm = `${YearFormed} ${MatchDate} ${MatchTime}`;
+      const formattedDttm = `${YearFormed} ${strippedDate} ${MatchTime}`;
       const start = DateTime.fromFormat(formattedDttm, dttmFormatString);
       const end = start.plus({ hours: 1 });
 
