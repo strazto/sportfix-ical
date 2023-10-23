@@ -210,13 +210,15 @@ app.get("/calendar/:centreID/:teamId/:metadata?", async (req, res) => {
       MatchTime: string;
       YearFormed: string;
     }) => {
+      const seasonTimes = metadata?.seasonTimes ?? [];
       // MatchDate: Mon, Jun 05
       // MatchTime: 09:05 PM
       // YearFormed: "2023"
-      const formattedDttm = formatDttmString({
-        year: YearFormed,
-        date: MatchDate,
-        time: MatchTime,
+      const formattedDttm = getDateInSeasonTimes({
+        seasonTimes,
+        MatchDate,
+        MatchTime,
+        YearFormed,
       });
 
       const start = DateTime.fromFormat(formattedDttm, dttmFormatString);
