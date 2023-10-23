@@ -93,6 +93,67 @@ const formatDttmString = ({
   return `${year} ${strippedDate} ${timeString}`;
 };
 
+const getDateInSeasonTimes = ({
+  seasonTimes,
+  MatchDate,
+  MatchTime,
+  YearFormed,
+}: {
+  seasonTimes: MetadataInput["seasonTimes"];
+  MatchDate: string;
+  MatchTime: string;
+  YearFormed: string;
+}) => {
+  const maxDate = seasonTimes.reduce((a, b) => (a.end > b.end ? a : b)).end;
+  const minDate = seasonTimes.reduce((a, b) =>
+    a.start < b.start ? a : b
+  ).start;
+
+  const interval = Interval.fromDateTimes(
+    DateTime.fromJSDate(minDate),
+    DateTime.fromJSDate(maxDate)
+  );
+
+  const maxYear = maxDate.getFullYear();
+  const minYear = minDate.getFullYear();
+
+  const years = new Set<number>();
+
+  for (let y = minYear; y <= maxYear; y++) {
+    years.add(y);
+  }
+
+  const formattedDttm = [...years]
+    .map((y) => formatDttmString({ year: y, date: MatchDate, time: MatchTime }))
+    .find((formattedDttm) => {
+      const date = DateTime.fromFormat(formattedDttm, dttmFormatString);
+
+      if (interval.contains(date)) {
+        return true;
+      }
+
+      return false;
+    });
+
+  if (formattedDttm) return formattedDttm;
+
+  const fallbackValue = formatDttmString({
+    year: YearFormed,
+    date: MatchDate,
+    time: MatchTime,
+  });
+
+  console.warn({
+    msg: "Unable to determine year",
+    fallbackValue,
+    years,
+    maxYear,
+    minYear,
+  });
+
+  return fallbackValue;
+};
+
 app.get("/calendar/:centreID/:teamId/:metadata?", async (req, res) => {
   const { centreID, teamId, metadata: metadataRaw } = req.params;
   //teamDetails({ centreID: "1720", teamId: "263619" });
