@@ -19,7 +19,6 @@ import memoizee from "memoizee";
 const apiHost = "https://api.fixionline.com";
 const routerPath = "MobService.svc";
 const teamDetailEndpoint = "GetMobTeamDetails";
-const dttmFormatString = "yyyy MMM dd t";
 
 const memoizeeExpiryConf = { maxAge: 1000 * 60 * 60 * 24, preFetch: 0.8 };
 
@@ -76,6 +75,23 @@ const parseMetadata = async (
 const parseMetadataMemo = memoizee(parseMetadata, {
   async: true,
 });
+
+const dttmFormatString = "yyyy MMM dd t";
+const formatDttmString = ({
+  date,
+  time,
+  year,
+}: {
+  date: string;
+  time: string;
+  year: string | number;
+}) => {
+  const strippedDate = date.replace(/(Mon|Tue|Wed|Thu|Fri|Sat|Sun),\s*/, "");
+
+  const timeString = time === "NA" ? "01:00 AM" : time;
+
+  return `${year} ${strippedDate} ${timeString}`;
+};
 
 app.get("/calendar/:centreID/:teamId/:metadata?", async (req, res) => {
   const { centreID, teamId, metadata: metadataRaw } = req.params;
@@ -136,19 +152,18 @@ app.get("/calendar/:centreID/:teamId/:metadata?", async (req, res) => {
       // MatchDate: Mon, Jun 05
       // MatchTime: 09:05 PM
       // YearFormed: "2023"
-      const strippedDate = MatchDate.replace(
-        /(Mon|Tue|Wed|Thu|Fri|Sat|Sun),\s*/,
-        ""
-      );
-      if (MatchTime === "NA") {
-        const formattedDttm = `${YearFormed} ${strippedDate} 01:00 AM`;
-        const start = DateTime.fromFormat(formattedDttm, dttmFormatString);
+      const formattedDttm = formatDttmString({
+        year: YearFormed,
+        date: MatchDate,
+        time: MatchTime,
+      });
 
+      const start = DateTime.fromFormat(formattedDttm, dttmFormatString);
+
+      if (MatchTime === "NA") {
         return { allDay: true, start };
       }
 
-      const formattedDttm = `${YearFormed} ${strippedDate} ${MatchTime}`;
-      const start = DateTime.fromFormat(formattedDttm, dttmFormatString);
       const end = start.plus({ hours: 1 });
 
       if (!start || !end) {
