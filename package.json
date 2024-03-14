@@ -33,7 +33,7 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
-    "@babel/runtime": "^7.23.1",
+    "@babel/runtime": "^7.23.9",
     "@types/memoizee": "^0.4.9",
     "dedent": "^1.5.1",
     "express": "^4.18.2",
