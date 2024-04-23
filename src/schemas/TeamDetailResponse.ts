@@ -1,9 +1,6 @@
 import * as z from "zod";
 
-export const CompetitionNameSchema = z.enum([
-  "Volleyball Monday Evening Mixed Div 1B 2023 Winter",
-  "Volleyball Monday Evening Mixed Div 1B 23/24 Summer",
-]);
+export const CompetitionNameSchema = z.string();
 export type CompetitionName = z.infer<typeof CompetitionNameSchema>;
 
 export const TeamSchema = z.object({
