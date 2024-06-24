@@ -14,7 +14,7 @@ COPY src/ /app/src/
 
 # Copy everything else
 COPY frontend/ /app/frontend/
-
+COPY frontend/.svelte-kit/ /app/frontend/.svelte-kit
 
 EXPOSE 3000
 
