@@ -206,13 +206,15 @@
 	<input type="text" bind:value={location.title} on:change={() => updateLocation()} />
 </label>
 
+<!--
 <h2>Sportsfix Team Details URL</h2>
 <p>
 	Eg <code
 		>https://sportfix.net/app/teamdetails.aspx?sportFixId=9cb1f735-da61-4f23-8da5-7f1f6a285a96&teamID=271722</code
 	>
 </p>
-<input type="text" on:change={updateUrl} />
+ <input type="text" on:change={updateUrl} />
+ -->
 
 <h2>Url Output</h2>
 <pre>{compressed}</pre>
