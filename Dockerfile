@@ -5,16 +5,15 @@ RUN echo "timeout=60000" > .npmrc
 
 # Just package files to start
 COPY package*.json tsconfig.json /app/
-# COPY frontend/package*.json  /app/frontend/
+COPY frontend/package*.json  /app/frontend/
 
 RUN npm ci
-# No longer copy frontend as can just be served statically 
-# RUN cd /app/frontend/ && npm ci
+RUN cd /app/frontend/ && npm ci
 
 COPY src/ /app/src/
 
 # Copy everything else
-# COPY frontend/ /app/frontend/
+COPY frontend/ /app/frontend/
 
 EXPOSE 3000
 
