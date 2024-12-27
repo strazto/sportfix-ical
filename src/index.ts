@@ -1,5 +1,6 @@
 "use strict";
 
+import path from "node:path";
 import express from "express";
 import ical, { ICalEventData } from "ical-generator";
 import { DateTime, Interval } from "luxon";
@@ -366,5 +367,7 @@ app.get("/calendar/:centreID/:teamId/:metadata?", async (req, res) => {
 
   cal.serve(res);
 });
+
+app.use("/", express.static(path.join(__dirname, "../frontend/build")));
 
 app.listen(3000);

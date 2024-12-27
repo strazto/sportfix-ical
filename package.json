@@ -5,8 +5,10 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "start": "npm run build && node dist/index.js",
-    "start:frontend": "cd frontend && npm run start",
+    "build:frontend": "npm run build --prefix frontend",
+    "build:all": "npm run build && npm run build:frontend",
+    "start": "npm run build:all && node dist/index.js",
+    "start:frontend": "npm run start --prefix frontend",
     "lint": "eslint --ext .js,.ts .",
     "format": "prettier --ignore-path .gitignore --write \"**/*.+(js|ts|json)\"",
     "test": "echo \"Error: no test specified\" && exit 1"
