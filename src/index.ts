@@ -368,6 +368,7 @@ app.get("/calendar/:centreID/:teamId/:metadata?", async (req, res) => {
   cal.serve(res);
 });
 
-app.use("/", express.static(path.join(__dirname, "../frontend/build")));
+// Commented out because can serve static site via github pages etc
+// app.use("/", express.static(path.join(__dirname, "../frontend/build")));
 
 app.listen(3000);

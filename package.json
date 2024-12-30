@@ -7,7 +7,7 @@
     "build": "tsc",
     "build:frontend": "npm run build --prefix frontend",
     "build:all": "npm run build && npm run build:frontend",
-    "start": "npm run build:all && node dist/index.js",
+    "start": "npm run build && node dist/index.js",
     "start:frontend": "npm run start --prefix frontend",
     "lint": "eslint --ext .js,.ts .",
     "format": "prettier --ignore-path .gitignore --write \"**/*.+(js|ts|json)\"",
