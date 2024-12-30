@@ -102,7 +102,7 @@
 	};
 
 	const updateUrl: ChangeEventHandler<HTMLInputElement> = (e) => {
-		//findSportfixIds(e.currentTarget.value)
+		findSportfixIds(e.currentTarget.value)
 	};
 </script>
 
@@ -206,7 +206,7 @@
 	<input type="text" bind:value={location.title} on:change={() => updateLocation()} />
 </label>
 
-<!--
+
 <h2>Sportsfix Team Details URL</h2>
 <p>
 	Eg <code
@@ -214,7 +214,7 @@
 	>
 </p>
  <input type="text" on:change={updateUrl} />
- -->
+
 
 <h2>Url Output</h2>
 <pre>{compressed}</pre>
